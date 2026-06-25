@@ -202,15 +202,17 @@ async function boot(){
 }
 function showSetup(err){
   const c = ghCfg() || {};
+  const owner = c.owner && !c.owner.includes("@") ? c.owner : "cdaymude";
   document.getElementById("nav").style.display="none";
   document.getElementById("view").innerHTML="";
   const s = document.getElementById("setup");
   s.style.display="block";
   s.innerHTML = `<div class="card"><h2>Connect Anchor to your data</h2>
     <div class="sub">Anchor syncs through your private GitHub repo so it works on every device.
-    Enter your details once on this device.</div>
+    Enter your details once on this device. Use the GitHub repo owner, not your sign-in email.</div>
     ${err?`<div class="banner" style="border-left-color:var(--danger)"><b>${esc(err)}</b></div>`:""}
-    <div class="field"><label>GitHub username</label><input id="g-owner" value="${esc(c.owner||"")}" placeholder="cdaymude" autocapitalize="off" autocorrect="off"></div>
+    <div class="field"><label>GitHub repo owner</label><input id="g-owner" value="${esc(owner)}" placeholder="cdaymude" autocapitalize="off" autocorrect="off"></div>
+    <div class="hint">For your Anchor data repo this should be <b>cdaymude</b>. Your email address is only for signing in to GitHub.</div>
     <div class="field"><label>Repository name</label><input id="g-repo" value="${esc(c.repo||"anchor-reminders")}" autocapitalize="off" autocorrect="off"></div>
     <div class="field"><label>Data file path</label><input id="g-path" value="${esc(c.path||"anchor-data.json")}" autocapitalize="off" autocorrect="off"></div>
     <div class="field"><label>Access token (fine-grained, Contents: Read &amp; write)</label>
@@ -222,6 +224,7 @@ function showSetup(err){
 window.connect = async () => {
   GH = {owner:val("g-owner"),repo:val("g-repo"),path:val("g-path")||"anchor-data.json",token:val("g-token"),sha:null};
   if(!GH.owner||!GH.repo||!GH.token){ toast("Fill in all fields"); return; }
+  if(GH.owner.includes("@")){ showSetup("Use the GitHub repo owner, cdaymude, not your sign-in email."); return; }
   try{
     let data = await ghGet();
     if(!data){ DB = blank(); await save(); data = DB; }
