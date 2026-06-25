@@ -91,6 +91,7 @@
   .seg button.on{background:var(--accent);color:#06231f;font-weight:600}
   .hint{font-size:12px;color:var(--muted);margin-top:5px}
   .count{background:var(--chip);border-radius:999px;font-size:11px;padding:1px 8px;margin-left:6px;color:var(--muted)}
+  mark{background:rgba(79,209,197,.22);color:var(--text);border-radius:4px;padding:0 2px}
   code{background:var(--chip);padding:1px 5px;border-radius:5px;font-size:13px}
   .item a,.chip{overflow-wrap:anywhere}
   @media(max-width:560px){
@@ -120,7 +121,7 @@
 "use strict";
 
 const SCHEMA_VERSION = 1;
-let DB = null, GH = null, masterKey = null, activeTab = "today", saving = false, projectSearch = "", selectedProjectId = null;
+let DB = null, GH = null, masterKey = null, activeTab = "today", saving = false, projectSearch = "", searchQuery = "", selectedProjectId = null;
 
 const blank = () => ({version:SCHEMA_VERSION,tasks:[],dates:[],resources:[],projects:[],facts:[],vault:[],
   vaultCheck:null,settings:{sms:{number:"",carrier:"",gateway:""},notifications:{email:"",pushoverEmail:""},digestTime:"07:00"},updated:new Date().toISOString()});
@@ -299,13 +300,13 @@ function taskDueToday(t){return !t.done&&taskNextDate(t)===todayStr();}
 function taskOverdue(t){return !t.done&&!(t.recurring)&&t.due&&t.due<todayStr();}
 
 /* ---------- Rendering ---------- */
-const TABS=[["today","Today"],["tasks","Tasks"],["dates","Dates"],["resources","Resources"],["projects","Projects"],["facts","Facts"],["vault","Vault"],["settings","Settings"]];
+const TABS=[["today","Today"],["search","Search"],["tasks","Tasks"],["dates","Dates"],["resources","Resources"],["projects","Projects"],["facts","Facts"],["vault","Vault"],["settings","Settings"]];
 function render(){
   if(!DB) return;
   ensureShape();
   renderNav(); renderStatus();
   const v=document.getElementById("view"); v.innerHTML="";
-  ({today:renderToday,tasks:renderTasks,dates:renderDates,resources:renderResources,projects:renderProjects,
+  ({today:renderToday,search:renderSearch,tasks:renderTasks,dates:renderDates,resources:renderResources,projects:renderProjects,
     facts:renderFacts,vault:renderVault,settings:renderSettings}[activeTab])(v);
 }
 function renderNav(){
@@ -350,6 +351,60 @@ function resourceDueToday(r){
   if(r.cadence==="monthly")return new Date().getDate()===1;
   return false;
 }
+function renderSearch(v){
+  const q=searchQuery.trim();
+  const results=q?searchAnchor(q):[];
+  const groups=[...new Set(results.map(r=>r.group))];
+  const body=!q?`<div class="card"><div class="empty">Search tasks, projects, notes, resources, facts, dates, and vault labels.</div></div>`:
+    results.length?groups.map(g=>`<div class="card"><h2>${esc(g)} <span class="count">${results.filter(r=>r.group===g).length}</span></h2>${results.filter(r=>r.group===g).map(searchRow).join("")}</div>`).join(""):
+    `<div class="card"><div class="empty">No matches for “${esc(q)}”.</div></div>`;
+  v.innerHTML=`<div class="card"><h2>Search Anchor</h2>
+    <div class="sub">Find anything you have stored. Vault results include labels, usernames, and URLs only; encrypted values stay hidden.</div>
+    <input id="globalSearch" value="${esc(searchQuery)}" placeholder="Search tasks, projects, notes, facts, links…" oninput="searchQuery=this.value;renderSearch(document.getElementById('view'))" autocapitalize="off" autocorrect="off">
+    ${q?`<div class="hint">${results.length} result${results.length===1?"":"s"}</div>`:""}</div>${body}`;
+  setTimeout(()=>{const el=document.getElementById("globalSearch");if(el&&document.activeElement!==el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}},20);
+}
+function searchAnchor(q){
+  const terms=q.toLowerCase().split(/\s+/).filter(Boolean);
+  const out=[];
+  const add=(group,title,detail,hay,action,score)=>{
+    hay=(hay||"").toLowerCase();
+    if(!terms.every(t=>hay.includes(t))) return;
+    const exact=(title||"").toLowerCase().includes(q.toLowerCase())?30:0;
+    out.push({group,title,detail,action,score:(score||0)+exact+terms.reduce((n,t)=>n+(hay.indexOf(t)>=0?1:0),0)});
+  };
+  DB.tasks.forEach(t=>add("Tasks",t.title,[t.due,(t.times||[]).join(", "),t.recurring,t.notes].filter(Boolean).join(" · "),
+    [t.title,t.due,(t.times||[]).join(" "),t.recurring,t.link,t.notes,t.done?"done":"open"].join(" "),`<button class="sm ghost" onclick="taskModal('${t.id}')">Edit</button>`,12));
+  DB.dates.forEach(d=>add("Dates",d.title,[fmtDate(nextOccurrence(d).toISOString().slice(0,10)),d.recurrence,d.notes].filter(Boolean).join(" · "),
+    [d.title,d.date,d.recurrence,d.notes].join(" "),`<button class="sm ghost" onclick="dateModal('${d.id}')">Edit</button>`,10));
+  DB.resources.forEach(r=>add("Resources",r.title,[r.cadence,r.url,r.notes].filter(Boolean).join(" · "),
+    [r.title,r.url,r.cadence,r.notes].join(" "),`<button class="sm ghost" onclick="resModal('${r.id}')">Edit</button>`,9));
+  DB.projects.forEach(p=>{
+    add("Projects",p.title,[p.status,`${(p.resources||[]).length} resources`,`${(p.notes||[]).length} notes`].filter(Boolean).join(" · "),
+      [p.title,p.status].join(" "),`<button class="sm primary" onclick="openProjectFromSearch('${p.id}')">Open</button>`,14);
+    (p.resources||[]).forEach(r=>add("Project resources",r.title||r.url,[p.title,r.url,r.notes].filter(Boolean).join(" · "),
+      [p.title,p.status,r.title,r.url,r.notes].join(" "),`<button class="sm primary" onclick="openProjectFromSearch('${p.id}')">Open project</button>`,8));
+    (p.notes||[]).forEach(n=>add("Project notes",n.title||"Note",[p.title,n.text].filter(Boolean).join(" · "),
+      [p.title,p.status,n.title,n.text].join(" "),`<button class="sm primary" onclick="openProjectFromSearch('${p.id}')">Open project</button>`,8));
+  });
+  DB.facts.forEach(f=>add("Facts",f.label,[f.category,f.value].filter(Boolean).join(" · "),
+    [f.label,f.value,f.category].join(" "),`<button class="sm ghost" onclick="factModal('${f.id}')">Edit</button>`,11));
+  DB.vault.forEach(e=>add("Vault",e.label,[e.username,e.url,"encrypted value hidden"].filter(Boolean).join(" · "),
+    [e.label,e.username,e.url].join(" "),`<button class="sm ghost" onclick="go('vault')">Open vault</button>`,7));
+  return out.sort((a,b)=>b.score-a.score||a.group.localeCompare(b.group)||a.title.localeCompare(b.title));
+}
+function searchRow(r){
+  return `<div class="item"><div class="body"><div class="title">${highlight(r.title,searchQuery)}</div>
+    ${r.detail?`<div class="meta"><span class="chip">${highlight(r.detail,searchQuery)}</span></div>`:""}</div>
+    <div class="actions">${r.action}</div></div>`;
+}
+function highlight(text,q){
+  text=esc(text||"");
+  const terms=q.trim().split(/\s+/).filter(Boolean).map(t=>t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"));
+  if(!terms.length) return text;
+  return text.replace(new RegExp(`(${terms.join("|")})`,"gi"),"<mark>$1</mark>");
+}
+window.openProjectFromSearch=id=>{selectedProjectId=id;activeTab="projects";render();};
 function renderTasks(v){
   const open=DB.tasks.filter(t=>!t.done).sort((a,b)=>(a.due||"")<(b.due||"")?-1:1);
   const done=DB.tasks.filter(t=>t.done);
