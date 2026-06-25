@@ -167,13 +167,14 @@ async function ghPut(text){
   GH.sha = (await r.json()).content.sha;
 }
 
-async function save(){
+async function save(opts){
+  opts = opts || {};
   if(!DB || !GH) return;
   DB.updated = new Date().toISOString();
   saving = true; renderStatus();
   try{ await ghPut(JSON.stringify(DB,null,2)); }
-  catch(e){ toast(e.message); }
-  saving = false; renderStatus();
+  catch(e){ toast(e.message); if(opts.throwOnError) throw e; }
+  finally{ saving = false; renderStatus(); }
 }
 async function pull(manual){
   if(!GH) return;
@@ -191,7 +192,7 @@ async function boot(){
     GH = {...cfg, path:cfg.path||"anchor-data.json", sha:null};
     try{
       let data = await ghGet();
-      if(!data){ data = blank(); DB=data; await save(); }   // create file if missing
+      if(!data){ data = blank(); DB=data; await save({throwOnError:true}); }   // create file if missing
       DB = data;
       document.getElementById("setup").style.display="none";
       document.getElementById("nav").style.display="flex";
@@ -227,7 +228,7 @@ window.connect = async () => {
   if(GH.owner.includes("@")){ showSetup("Use the GitHub repo owner, cdaymude, not your sign-in email."); return; }
   try{
     let data = await ghGet();
-    if(!data){ DB = blank(); await save(); data = DB; }
+    if(!data){ DB = blank(); await save({throwOnError:true}); data = DB; }
     DB = data; ghSaveCfg();
     document.getElementById("setup").style.display="none";
     document.getElementById("nav").style.display="flex";
