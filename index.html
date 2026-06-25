@@ -333,11 +333,17 @@ function renderSearchBar(){
   const bar=document.getElementById("searchBar");
   if(!DB||!GH){bar.className="searchbar";bar.innerHTML="";return;}
   bar.className="searchbar show";
-  bar.innerHTML=`<input id="globalSearch" value="${esc(searchQuery)}" placeholder="Search Anchor…" oninput="searchQuery=this.value;render()" autocapitalize="off" autocorrect="off">
-    ${searchQuery?`<button class="sm ghost" onclick="clearSearch()">Clear</button>`:""}`;
-  setTimeout(()=>{const el=document.getElementById("globalSearch");if(el&&document.activeElement===el){el.setSelectionRange(el.value.length,el.value.length);}},20);
+  if(!document.getElementById("globalSearch")){
+    bar.innerHTML=`<input id="globalSearch" value="${esc(searchQuery)}" placeholder="Search Anchor…" oninput="updateSearch(this.value)" autocapitalize="off" autocorrect="off">
+      <button id="clearSearchBtn" class="sm ghost" onclick="clearSearch()" style="display:none">Clear</button>`;
+  }
+  const input=document.getElementById("globalSearch");
+  if(input&&document.activeElement!==input&&input.value!==searchQuery)input.value=searchQuery;
+  const btn=document.getElementById("clearSearchBtn");
+  if(btn)btn.style.display=searchQuery?"":"none";
 }
-window.clearSearch=()=>{searchQuery="";render();};
+window.updateSearch=q=>{searchQuery=q;render();};
+window.clearSearch=()=>{searchQuery="";const input=document.getElementById("globalSearch");if(input)input.value="";render();};
 function dueTodayCount(){
   let n=DB.tasks.filter(t=>taskDueToday(t)||taskOverdue(t)).length;
   n+=DB.dates.filter(d=>{const dd=daysUntil(nextOccurrence(d));return dd>=0&&dd<=(d.remindDaysBefore||0);}).length;
