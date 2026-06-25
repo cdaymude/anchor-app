@@ -426,7 +426,7 @@ window.openProjectFromSearch=id=>{selectedProjectId=id;activeTab="projects";rend
 function renderTasks(v){
   const open=DB.tasks.filter(t=>!t.done).sort((a,b)=>(a.due||"")<(b.due||"")?-1:1);
   const done=DB.tasks.filter(t=>t.done);
-  v.innerHTML=`<div class="card"><h2>Tasks</h2><div class="sub">Each task can text you at several times on its due day.</div>
+  v.innerHTML=`<div class="card"><h2>Tasks</h2><div class="sub">Task times are included in your morning digest so you can see when each item belongs in the day.</div>
     <button class="primary" onclick="taskModal()">+ New task</button></div>
     <div class="card">${open.length?open.map(taskRow).join(""):'<div class="empty">No open tasks.</div>'}</div>
     ${done.length?`<div class="card"><h2 class="sub">Completed</h2>${done.map(taskRow).join("")}</div>`:""}`;
@@ -573,7 +573,7 @@ function renderSettings(v){
   const s=DB.settings;
   const n=s.notifications||{};
   v.innerHTML=`<div class="card"><h2>Reminder delivery</h2>
-    <div class="sub">The scheduled reminder job sends due tasks to your email and Pushover.</div>
+    <div class="sub">The scheduled reminder job sends one morning brief with today's tasks, times, notes, links, dates, and resources.</div>
     <div class="grid">
       <div><label>Email address</label><input id="set-email" type="email" value="${esc(n.email||"")}" placeholder="you@example.com"></div>
       <div><label>Pushover email</label><input id="set-pushover" type="email" value="${esc(n.pushoverEmail||"")}" placeholder="your-code@pomail.net"></div>
@@ -612,7 +612,7 @@ window.taskModal=id=>{
   openModal(`<h3>${id?"Edit":"New"} task</h3>
     <div class="field"><label>Task</label><input id="f-title" value="${esc(t.title)}"></div>
     <div class="field"><label>Due date</label><input id="f-due" type="date" value="${t.due||todayStr()}"></div>
-    <div class="field"><label>Remind me at (multiple OK)</label>${timeChips(t.times||[])}</div>
+    <div class="field"><label>Time(s) for morning brief</label>${timeChips(t.times||[])}</div>
     <div class="field"><label>Repeat</label><select id="f-rec">${["","daily","weekly","monthly"].map(o=>`<option value="${o}" ${t.recurring===o||(!t.recurring&&o==="")?"selected":""}>${o||"no repeat"}</option>`).join("")}</select></div>
     <div class="field"><label>Link</label><input id="f-link" value="${esc(t.link||"")}" placeholder="https://"></div>
     <div class="field"><label>Notes</label><textarea id="f-notes">${esc(t.notes||"")}</textarea></div>
