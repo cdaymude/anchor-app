@@ -43,6 +43,10 @@
   nav{display:flex;gap:6px;overflow-x:auto;margin-bottom:16px;-webkit-overflow-scrolling:touch;padding-bottom:2px}
   nav button{background:transparent;border:1px solid transparent;color:var(--muted);border-radius:999px;padding:9px 15px;white-space:nowrap;flex:none}
   nav button.active{background:var(--panel2);color:var(--text);border-color:var(--line)}
+  .searchbar{display:none;margin:-4px 0 14px;gap:8px;align-items:center}
+  .searchbar.show{display:flex}
+  .searchbar input{flex:1}
+  .searchbar button{flex:none}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
     padding:15px 16px;margin-bottom:13px;box-shadow:var(--shadow)}
   .card h2{margin:0 0 4px;font-size:16px} .card .sub{color:var(--muted);font-size:13px;margin-bottom:12px}
@@ -111,6 +115,7 @@
 <div class="wrap">
   <div id="setup" style="display:none"></div>
   <nav id="nav" style="display:none"></nav>
+  <div id="searchBar" class="searchbar"></div>
   <div id="view"></div>
 </div>
 
@@ -300,13 +305,14 @@ function taskDueToday(t){return !t.done&&taskNextDate(t)===todayStr();}
 function taskOverdue(t){return !t.done&&!(t.recurring)&&t.due&&t.due<todayStr();}
 
 /* ---------- Rendering ---------- */
-const TABS=[["today","Today"],["search","Search"],["tasks","Tasks"],["dates","Dates"],["resources","Resources"],["projects","Projects"],["facts","Facts"],["vault","Vault"],["settings","Settings"]];
+const TABS=[["today","Today"],["tasks","Tasks"],["dates","Dates"],["resources","Resources"],["projects","Projects"],["facts","Facts"],["vault","Vault"],["settings","Settings"]];
 function render(){
   if(!DB) return;
   ensureShape();
-  renderNav(); renderStatus();
+  renderNav(); renderSearchBar(); renderStatus();
   const v=document.getElementById("view"); v.innerHTML="";
-  ({today:renderToday,search:renderSearch,tasks:renderTasks,dates:renderDates,resources:renderResources,projects:renderProjects,
+  if(searchQuery.trim()){renderSearchResults(v);return;}
+  ({today:renderToday,tasks:renderTasks,dates:renderDates,resources:renderResources,projects:renderProjects,
     facts:renderFacts,vault:renderVault,settings:renderSettings}[activeTab])(v);
 }
 function renderNav(){
@@ -323,6 +329,15 @@ function renderStatus(){
   s.innerHTML = state;
 }
 window.go=id=>{activeTab=id;render();};
+function renderSearchBar(){
+  const bar=document.getElementById("searchBar");
+  if(!DB||!GH){bar.className="searchbar";bar.innerHTML="";return;}
+  bar.className="searchbar show";
+  bar.innerHTML=`<input id="globalSearch" value="${esc(searchQuery)}" placeholder="Search Anchor…" oninput="searchQuery=this.value;render()" autocapitalize="off" autocorrect="off">
+    ${searchQuery?`<button class="sm ghost" onclick="clearSearch()">Clear</button>`:""}`;
+  setTimeout(()=>{const el=document.getElementById("globalSearch");if(el&&document.activeElement===el){el.setSelectionRange(el.value.length,el.value.length);}},20);
+}
+window.clearSearch=()=>{searchQuery="";render();};
 function dueTodayCount(){
   let n=DB.tasks.filter(t=>taskDueToday(t)||taskOverdue(t)).length;
   n+=DB.dates.filter(d=>{const dd=daysUntil(nextOccurrence(d));return dd>=0&&dd<=(d.remindDaysBefore||0);}).length;
@@ -351,18 +366,14 @@ function resourceDueToday(r){
   if(r.cadence==="monthly")return new Date().getDate()===1;
   return false;
 }
-function renderSearch(v){
+function renderSearchResults(v){
   const q=searchQuery.trim();
   const results=q?searchAnchor(q):[];
   const groups=[...new Set(results.map(r=>r.group))];
-  const body=!q?`<div class="card"><div class="empty">Search tasks, projects, notes, resources, facts, dates, and vault labels.</div></div>`:
-    results.length?groups.map(g=>`<div class="card"><h2>${esc(g)} <span class="count">${results.filter(r=>r.group===g).length}</span></h2>${results.filter(r=>r.group===g).map(searchRow).join("")}</div>`).join(""):
+  const body=results.length?groups.map(g=>`<div class="card"><h2>${esc(g)} <span class="count">${results.filter(r=>r.group===g).length}</span></h2>${results.filter(r=>r.group===g).map(searchRow).join("")}</div>`).join(""):
     `<div class="card"><div class="empty">No matches for “${esc(q)}”.</div></div>`;
-  v.innerHTML=`<div class="card"><h2>Search Anchor</h2>
-    <div class="sub">Find anything you have stored. Vault results include labels, usernames, and URLs only; encrypted values stay hidden.</div>
-    <input id="globalSearch" value="${esc(searchQuery)}" placeholder="Search tasks, projects, notes, facts, links…" oninput="searchQuery=this.value;renderSearch(document.getElementById('view'))" autocapitalize="off" autocorrect="off">
-    ${q?`<div class="hint">${results.length} result${results.length===1?"":"s"}</div>`:""}</div>${body}`;
-  setTimeout(()=>{const el=document.getElementById("globalSearch");if(el&&document.activeElement!==el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}},20);
+  v.innerHTML=`<div class="card"><h2>Search results</h2>
+    <div class="sub">${results.length} result${results.length===1?"":"s"} · Vault results include labels, usernames, and URLs only.</div></div>${body}`;
 }
 function searchAnchor(q){
   const terms=q.toLowerCase().split(/\s+/).filter(Boolean);
