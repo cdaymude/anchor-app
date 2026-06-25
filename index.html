@@ -392,11 +392,11 @@ function searchAnchor(q){
     out.push({group,title,detail,action,open,score:(score||0)+exact+terms.reduce((n,t)=>n+(hay.indexOf(t)>=0?1:0),0)});
   };
   DB.tasks.forEach(t=>add("Tasks",t.title,[t.due,(t.times||[]).join(", "),t.recurring,t.notes].filter(Boolean).join(" · "),
-    [t.title,t.due,(t.times||[]).join(" "),t.recurring,t.link,t.notes,t.done?"done":"open"].join(" "),`<button class="sm ghost" onclick="openTaskFromSearch('${t.id}')">Edit</button>`,12,`openTaskFromSearch('${t.id}')`));
+    [t.title,t.due,(t.times||[]).join(" "),t.recurring,t.link,t.notes,t.done?"done":"open"].join(" "),`<button class="sm ghost" onclick="editTaskFromSearch('${t.id}')">Edit</button>`,12,`goToTabFromSearch('tasks')`));
   DB.dates.forEach(d=>add("Dates",d.title,[fmtDate(nextOccurrence(d).toISOString().slice(0,10)),d.recurrence,d.notes].filter(Boolean).join(" · "),
-    [d.title,d.date,d.recurrence,d.notes].join(" "),`<button class="sm ghost" onclick="openDateFromSearch('${d.id}')">Edit</button>`,10,`openDateFromSearch('${d.id}')`));
+    [d.title,d.date,d.recurrence,d.notes].join(" "),`<button class="sm ghost" onclick="editDateFromSearch('${d.id}')">Edit</button>`,10,`goToTabFromSearch('dates')`));
   DB.resources.forEach(r=>add("Resources",r.title,[r.cadence,r.url,r.notes].filter(Boolean).join(" · "),
-    [r.title,r.url,r.cadence,r.notes].join(" "),`<button class="sm ghost" onclick="openResourceFromSearch('${r.id}')">Edit</button>`,9,`openResourceFromSearch('${r.id}')`));
+    [r.title,r.url,r.cadence,r.notes].join(" "),`<button class="sm ghost" onclick="editResourceFromSearch('${r.id}')">Edit</button>`,9,`goToTabFromSearch('resources')`));
   DB.projects.forEach(p=>{
     add("Projects",p.title,[p.status,`${(p.resources||[]).length} resources`,`${(p.notes||[]).length} notes`].filter(Boolean).join(" · "),
       [p.title,p.status].join(" "),`<button class="sm primary" onclick="openProjectFromSearch('${p.id}')">Open</button>`,14,`openProjectFromSearch('${p.id}')`);
@@ -406,7 +406,7 @@ function searchAnchor(q){
       [p.title,p.status,n.title,n.text].join(" "),`<button class="sm primary" onclick="openProjectFromSearch('${p.id}')">Open project</button>`,8,`openProjectFromSearch('${p.id}')`));
   });
   DB.facts.forEach(f=>add("Facts",f.label,[f.category,f.value].filter(Boolean).join(" · "),
-    [f.label,f.value,f.category].join(" "),`<button class="sm ghost" onclick="openFactFromSearch('${f.id}')">Edit</button>`,11,`openFactFromSearch('${f.id}')`));
+    [f.label,f.value,f.category].join(" "),`<button class="sm ghost" onclick="editFactFromSearch('${f.id}')">Edit</button>`,11,`goToTabFromSearch('facts')`));
   DB.vault.forEach(e=>add("Vault",e.label,[e.username,e.url,"encrypted value hidden"].filter(Boolean).join(" · "),
     [e.label,e.username,e.url].join(" "),`<button class="sm ghost" onclick="openVaultFromSearch()">Open vault</button>`,7,"openVaultFromSearch()"));
   return out.sort((a,b)=>b.score-a.score||a.group.localeCompare(b.group)||a.title.localeCompare(b.title));
@@ -423,10 +423,11 @@ function highlight(text,q){
   return text.replace(new RegExp(`(${terms.join("|")})`,"gi"),"<mark>$1</mark>");
 }
 function leaveSearch(){searchQuery="";const input=document.getElementById("globalSearch");if(input)input.value="";}
-window.openTaskFromSearch=id=>{leaveSearch();activeTab="tasks";render();taskModal(id);};
-window.openDateFromSearch=id=>{leaveSearch();activeTab="dates";render();dateModal(id);};
-window.openResourceFromSearch=id=>{leaveSearch();activeTab="resources";render();resModal(id);};
-window.openFactFromSearch=id=>{leaveSearch();activeTab="facts";render();factModal(id);};
+window.goToTabFromSearch=id=>{leaveSearch();activeTab=id;render();};
+window.editTaskFromSearch=id=>{leaveSearch();activeTab="tasks";render();taskModal(id);};
+window.editDateFromSearch=id=>{leaveSearch();activeTab="dates";render();dateModal(id);};
+window.editResourceFromSearch=id=>{leaveSearch();activeTab="resources";render();resModal(id);};
+window.editFactFromSearch=id=>{leaveSearch();activeTab="facts";render();factModal(id);};
 window.openVaultFromSearch=()=>{leaveSearch();activeTab="vault";render();};
 window.openProjectFromSearch=id=>{leaveSearch();selectedProjectId=id;activeTab="projects";render();};
 function renderTasks(v){
