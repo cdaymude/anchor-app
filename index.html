@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Anchor">
+<meta name="theme-color" content="#0f1419">
+<title>Anchor</title>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#171e26; --panel2:#1e2730; --line:#2a3540;
+    --text:#e6edf3; --muted:#8a99a8; --accent:#4fd1c5; --accent2:#63b3ed;
+    --warn:#f6ad55; --danger:#fc8181; --good:#68d391; --chip:#243240;
+    --radius:14px; --shadow:0 6px 24px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:linear-gradient(160deg,#0f1419,#121a22);color:var(--text);
+    font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-text-size-adjust:100%;}
+  header{padding:14px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line);
+    position:sticky;top:0;background:rgba(15,20,25,.94);backdrop-filter:blur(8px);z-index:20;
+    padding-top:calc(14px + env(safe-area-inset-top))}
+  .logo{font-size:19px;font-weight:700;display:flex;align-items:center;gap:9px}
+  .logo .dot{width:11px;height:11px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent)}
+  .status{margin-left:auto;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
+  .status .ok{color:var(--good)} .status .off{color:var(--warn)} .status .sync{color:var(--accent2)}
+  button{font:inherit;cursor:pointer;border-radius:10px;padding:10px 15px;
+    background:var(--panel2);color:var(--text);transition:.15s;border:1px solid var(--line)}
+  button:hover{border-color:var(--accent)}
+  button.primary{background:var(--accent);color:#06231f;font-weight:600;border-color:transparent}
+  button.ghost{background:transparent}
+  button.sm{padding:6px 11px;font-size:13px;border-radius:8px}
+  button.danger{color:var(--danger)} button.danger:hover{border-color:var(--danger)}
+  button.icon{padding:7px 10px}
+  input,select,textarea{font:16px/1.4 inherit;background:var(--panel);color:var(--text);
+    border:1px solid var(--line);border-radius:9px;padding:11px 12px;width:100%}
+  textarea{resize:vertical;min-height:54px}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+  label{font-size:12.5px;color:var(--muted);display:block;margin:0 0 4px 2px}
+  .wrap{max-width:760px;margin:0 auto;padding:16px;padding-bottom:90px}
+  nav{display:flex;gap:6px;overflow-x:auto;margin-bottom:16px;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+  nav button{background:transparent;border:1px solid transparent;color:var(--muted);border-radius:999px;padding:9px 15px;white-space:nowrap;flex:none}
+  nav button.active{background:var(--panel2);color:var(--text);border-color:var(--line)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:15px 16px;margin-bottom:13px;box-shadow:var(--shadow)}
+  .card h2{margin:0 0 4px;font-size:16px} .card .sub{color:var(--muted);font-size:13px;margin-bottom:12px}
+  .row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1;min-width:120px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:560px){.grid{grid-template-columns:1fr}}
+  .item{display:flex;gap:12px;align-items:flex-start;padding:13px 0;border-top:1px solid var(--line)}
+  .item:first-child{border-top:none}.item .body{flex:1;min-width:0}.item .title{font-weight:600}
+  .item .meta{color:var(--muted);font-size:12.5px;margin-top:4px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .chip{background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:11.5px;color:var(--muted)}
+  .chip.warn{color:var(--warn);border-color:#5a4324}.chip.danger{color:var(--danger);border-color:#5a2c2c}
+  .chip.good{color:var(--good);border-color:#2c5a3a}.chip.time{color:var(--accent2)}
+  a{color:var(--accent2);text-decoration:none}a:hover{text-decoration:underline}
+  .check{width:24px;height:24px;border-radius:50%;border:2px solid var(--line);background:transparent;
+    cursor:pointer;flex:none;margin-top:1px;transition:.15s}
+  .check.done{background:var(--good);border-color:var(--good)}
+  .done .title{text-decoration:line-through;color:var(--muted)}
+  .empty{color:var(--muted);text-align:center;padding:26px;font-size:14px}
+  .actions{display:flex;gap:6px;flex:none}
+  .quickadd{position:fixed;bottom:0;left:0;right:0;background:rgba(23,30,38,.97);backdrop-filter:blur(8px);
+    border-top:1px solid var(--line);padding:12px;display:flex;gap:8px;z-index:15;
+    padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+  .quickadd .inner{max-width:760px;margin:0 auto;display:flex;gap:8px;width:100%}
+  .quickadd input{flex:1}
+  .pill-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .pill{background:var(--chip);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:14px;cursor:pointer}
+  .pill.on{background:var(--accent);color:#06231f;border-color:transparent;font-weight:600}
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;justify-content:center;z-index:50}
+  .modal-bg.show{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--line);border-radius:18px 18px 0 0;padding:20px;
+    max-width:600px;width:100%;box-shadow:var(--shadow);max-height:92vh;overflow:auto;
+    padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+  @media(min-width:560px){.modal-bg{align-items:center}.modal{border-radius:16px}}
+  .modal h3{margin:0 0 14px}.field{margin-bottom:12px}
+  .banner{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:10px;padding:14px 15px;margin-bottom:14px;font-size:14px;color:var(--muted)}
+  .banner b{color:var(--text)}
+  .vault-locked{text-align:center;padding:28px 12px}.lockicon{font-size:34px;margin-bottom:8px}
+  .secret{font-family:ui-monospace,Menlo,monospace;letter-spacing:1px}
+  .toast{position:fixed;bottom:84px;left:50%;transform:translateX(-50%);background:var(--panel2);
+    border:1px solid var(--accent);color:var(--text);padding:11px 18px;border-radius:10px;
+    box-shadow:var(--shadow);opacity:0;transition:.25s;z-index:80;pointer-events:none;max-width:90%}
+  .toast.show{opacity:1}
+  .seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  .seg button{border:none;border-radius:0;background:transparent;flex:1;padding:10px}
+  .seg button.on{background:var(--accent);color:#06231f;font-weight:600}
+  .hint{font-size:12px;color:var(--muted);margin-top:5px}
+  .count{background:var(--chip);border-radius:999px;font-size:11px;padding:1px 8px;margin-left:6px;color:var(--muted)}
+  code{background:var(--chip);padding:1px 5px;border-radius:5px;font-size:13px}
+  .item a,.chip{overflow-wrap:anywhere}
+  @media(max-width:560px){
+    .item{gap:10px}.actions{flex-direction:column}
+    .row>button,.row>input{min-width:100%}
+    .card h2{line-height:1.25}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><span class="dot"></span> Anchor</div>
+  <div class="status" id="status"></div>
+  <button class="icon ghost sm" id="refreshBtn" title="Refresh" onclick="pull(true)">↻</button>
+</header>
+
+<div class="wrap">
+  <div id="setup" style="display:none"></div>
+  <nav id="nav" style="display:none"></nav>
+  <div id="view"></div>
+</div>
+
+<div class="modal-bg" id="modalBg"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+const SCHEMA_VERSION = 1;
+let DB = null, GH = null, masterKey = null, activeTab = "today", saving = false, projectSearch = "", selectedProjectId = null;
+
+const blank = () => ({version:SCHEMA_VERSION,tasks:[],dates:[],resources:[],projects:[],facts:[],vault:[],
+  vaultCheck:null,settings:{sms:{number:"",carrier:"",gateway:""},notifications:{email:"",pushoverEmail:""},digestTime:"07:00"},updated:new Date().toISOString()});
+const uid = () => Math.random().toString(36).slice(2,10);
+const todayStr = () => new Date().toISOString().slice(0,10);
+function ensureShape(){
+  if(!DB) return;
+  DB.tasks=DB.tasks||[]; DB.dates=DB.dates||[]; DB.resources=DB.resources||[];
+  DB.projects=DB.projects||[]; DB.facts=DB.facts||[]; DB.vault=DB.vault||[];
+  DB.projects.forEach(p=>{
+    p.resources=p.resources||(p.links||[]).map(l=>({id:uid(),title:l.label||l.url,url:l.url,notes:""}));
+    if(Array.isArray(p.notes)) p.notes=p.notes;
+    else p.notes=p.notes?[{id:uid(),title:"Note",text:p.notes,created:p.created||new Date().toISOString()}]:[];
+  });
+  DB.settings=DB.settings||{}; DB.settings.sms=DB.settings.sms||{number:"",carrier:"",gateway:""};
+  DB.settings.notifications=DB.settings.notifications||{email:"",pushoverEmail:""};
+  if(!("email" in DB.settings.notifications)) DB.settings.notifications.email="";
+  if(!("pushoverEmail" in DB.settings.notifications)) DB.settings.notifications.pushoverEmail="";
+  if(!DB.settings.digestTime) DB.settings.digestTime="07:00";
+}
+
+/* ---------- GitHub storage ---------- */
+function ghCfg(){try{return JSON.parse(localStorage.getItem("anchor-gh"));}catch(e){return null;}}
+function ghSaveCfg(){localStorage.setItem("anchor-gh",JSON.stringify({owner:GH.owner,repo:GH.repo,path:GH.path,token:GH.token}));}
+const apiURL = () => `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${encodeURIComponent(GH.path)}`;
+const ghHeaders = () => ({Authorization:`Bearer ${GH.token}`,Accept:"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"});
+const encB64 = s => btoa(unescape(encodeURIComponent(s)));
+const decB64 = b => decodeURIComponent(escape(atob((b||"").replace(/\n/g,""))));
+
+async function ghGet(){
+  const r = await fetch(apiURL(), {headers:ghHeaders(), cache:"no-store"});
+  if(r.status===404){ GH.sha=null; return null; }
+  if(r.status===401) throw new Error("Token rejected (401). Check the token.");
+  if(!r.ok) throw new Error("Read failed: "+r.status);
+  const j = await r.json(); GH.sha = j.sha;
+  return JSON.parse(decB64(j.content));
+}
+async function ghPut(text){
+  const send = sha => fetch(apiURL(), {method:"PUT", headers:ghHeaders(),
+    body:JSON.stringify({message:"Anchor update "+new Date().toISOString(), content:encB64(text), sha:sha||undefined})});
+  let r = await send(GH.sha);
+  if(r.status===409){ await ghGet(); r = await send(GH.sha); }   // conflict: take latest sha, last-write-wins
+  if(!r.ok) throw new Error("Save failed: "+r.status);
+  GH.sha = (await r.json()).content.sha;
+}
+
+async function save(){
+  if(!DB || !GH) return;
+  DB.updated = new Date().toISOString();
+  saving = true; renderStatus();
+  try{ await ghPut(JSON.stringify(DB,null,2)); }
+  catch(e){ toast(e.message); }
+  saving = false; renderStatus();
+}
+async function pull(manual){
+  if(!GH) return;
+  try{
+    const data = await ghGet();
+    if(data){ DB = data; render(); if(manual) toast("Up to date"); }
+    else if(manual) toast("No data file yet");
+  }catch(e){ toast(e.message); }
+}
+
+/* ---------- Boot / setup ---------- */
+async function boot(){
+  const cfg = ghCfg();
+  if(cfg && cfg.token){
+    GH = {...cfg, path:cfg.path||"anchor-data.json", sha:null};
+    try{
+      let data = await ghGet();
+      if(!data){ data = blank(); DB=data; await save(); }   // create file if missing
+      DB = data;
+      document.getElementById("setup").style.display="none";
+      document.getElementById("nav").style.display="flex";
+      render(); return;
+    }catch(e){ showSetup(e.message); return; }
+  }
+  showSetup();
+}
+function showSetup(err){
+  const c = ghCfg() || {};
+  document.getElementById("nav").style.display="none";
+  document.getElementById("view").innerHTML="";
+  const s = document.getElementById("setup");
+  s.style.display="block";
+  s.innerHTML = `<div class="card"><h2>Connect Anchor to your data</h2>
+    <div class="sub">Anchor syncs through your private GitHub repo so it works on every device.
+    Enter your details once on this device.</div>
+    ${err?`<div class="banner" style="border-left-color:var(--danger)"><b>${esc(err)}</b></div>`:""}
+    <div class="field"><label>GitHub username</label><input id="g-owner" value="${esc(c.owner||"")}" placeholder="cdaymude" autocapitalize="off" autocorrect="off"></div>
+    <div class="field"><label>Repository name</label><input id="g-repo" value="${esc(c.repo||"anchor-reminders")}" autocapitalize="off" autocorrect="off"></div>
+    <div class="field"><label>Data file path</label><input id="g-path" value="${esc(c.path||"anchor-data.json")}" autocapitalize="off" autocorrect="off"></div>
+    <div class="field"><label>Access token (fine-grained, Contents: Read &amp; write)</label>
+      <input id="g-token" type="password" value="${esc(c.token||"")}" placeholder="github_pat_…" autocapitalize="off" autocorrect="off"></div>
+    <div class="hint">The token is stored only on this device. See the setup guide for how to create it.</div>
+    <div style="margin-top:14px"><button class="primary" onclick="connect()">Connect</button></div>
+  </div>`;
+}
+window.connect = async () => {
+  GH = {owner:val("g-owner"),repo:val("g-repo"),path:val("g-path")||"anchor-data.json",token:val("g-token"),sha:null};
+  if(!GH.owner||!GH.repo||!GH.token){ toast("Fill in all fields"); return; }
+  try{
+    let data = await ghGet();
+    if(!data){ DB = blank(); await save(); data = DB; }
+    DB = data; ghSaveCfg();
+    document.getElementById("setup").style.display="none";
+    document.getElementById("nav").style.display="flex";
+    render();
+  }catch(e){ showSetup(e.message); }
+};
+window.disconnect = () => { if(confirm("Forget the token on this device?")){ localStorage.removeItem("anchor-gh"); location.reload(); } };
+
+/* ---------- Crypto (vault) ---------- */
+async function deriveKey(pw, saltB64){
+  const enc=new TextEncoder();
+  const salt = saltB64 ? b64toBuf(saltB64) : crypto.getRandomValues(new Uint8Array(16));
+  const base = await crypto.subtle.importKey("raw",enc.encode(pw),"PBKDF2",false,["deriveKey"]);
+  const key = await crypto.subtle.deriveKey({name:"PBKDF2",salt,iterations:150000,hash:"SHA-256"},
+    base,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
+  return {key, salt: bufToB64(salt)};
+}
+async function encrypt(key, plain){
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=await crypto.subtle.encrypt({name:"AES-GCM",iv},key,new TextEncoder().encode(plain));
+  return {iv:bufToB64(iv), cipher:bufToB64(ct)};
+}
+async function decrypt(key, obj){
+  const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64toBuf(obj.iv)},key,b64toBuf(obj.cipher));
+  return new TextDecoder().decode(pt);
+}
+const bufToB64=b=>btoa(String.fromCharCode(...new Uint8Array(b)));
+const b64toBuf=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function unlockVault(pw){
+  if(!DB.vaultCheck){ const {key,salt}=await deriveKey(pw); const token=await encrypt(key,"anchor-vault-ok");
+    DB.vaultCheck={salt,...token}; masterKey=key; await save(); return true; }
+  const {key}=await deriveKey(pw, DB.vaultCheck.salt);
+  try{ if(await decrypt(key,{iv:DB.vaultCheck.iv,cipher:DB.vaultCheck.cipher})==="anchor-vault-ok"){ masterKey=key; return true; } }catch(e){}
+  return false;
+}
+
+/* ---------- Reminder helpers ---------- */
+function nextOccurrence(d){
+  const today=new Date(todayStr()+"T00:00:00");
+  if(d.recurrence==="annual"){const[_,mm,dd]=d.date.split("-");let y=today.getFullYear();
+    let c=new Date(`${y}-${mm}-${dd}T00:00:00`);if(c<today)c=new Date(`${y+1}-${mm}-${dd}T00:00:00`);return c;}
+  if(d.recurrence==="monthly"){const day=parseInt(d.date.split("-")[2],10);let y=today.getFullYear(),m=today.getMonth();
+    let c=new Date(y,m,day);if(c<today){m++;c=new Date(y,m,day);}return c;}
+  return new Date(d.date+"T00:00:00");
+}
+const daysUntil=date=>Math.round((date-new Date(todayStr()+"T00:00:00"))/86400000);
+function localDate(s){return new Date(s+"T00:00:00");}
+function isoDate(d){return d.toISOString().slice(0,10);}
+function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x;}
+function taskNextDate(t){
+  if(!t.due) return "";
+  const rec=(t.recurring||"").toLowerCase();
+  if(!rec) return t.due;
+  const start=localDate(t.due), today=localDate(todayStr());
+  if(today<start) return t.due;
+  const diff=Math.floor((today-start)/86400000);
+  if(rec==="daily") return todayStr();
+  if(rec==="weekly") return isoDate(addDays(today,(7-(diff%7))%7));
+  if(rec==="monthly"){
+    let y=today.getFullYear(), m=today.getMonth(), day=start.getDate();
+    let cand=new Date(y,m,Math.min(day,new Date(y,m+1,0).getDate()));
+    if(cand<today){m++; cand=new Date(y,m,Math.min(day,new Date(y,m+1,0).getDate()));}
+    return isoDate(cand);
+  }
+  return t.due;
+}
+function taskDueToday(t){return !t.done&&taskNextDate(t)===todayStr();}
+function taskOverdue(t){return !t.done&&!(t.recurring)&&t.due&&t.due<todayStr();}
+
+/* ---------- Rendering ---------- */
+const TABS=[["today","Today"],["tasks","Tasks"],["dates","Dates"],["resources","Resources"],["projects","Projects"],["facts","Facts"],["vault","Vault"],["settings","Settings"]];
+function render(){
+  if(!DB) return;
+  ensureShape();
+  renderNav(); renderStatus();
+  const v=document.getElementById("view"); v.innerHTML="";
+  ({today:renderToday,tasks:renderTasks,dates:renderDates,resources:renderResources,projects:renderProjects,
+    facts:renderFacts,vault:renderVault,settings:renderSettings}[activeTab])(v);
+}
+function renderNav(){
+  const counts={today:dueTodayCount(),tasks:DB.tasks.filter(t=>!t.done).length,dates:DB.dates.length,
+    resources:DB.resources.length,projects:DB.projects.length,facts:DB.facts.length,vault:DB.vault.length};
+  document.getElementById("nav").innerHTML=TABS.map(([id,label])=>{
+    const c=counts[id];const badge=(c!=null&&c>0)?`<span class="count">${c}</span>`:"";
+    return `<button class="${activeTab===id?'active':''}" onclick="go('${id}')">${label}${badge}</button>`;}).join("");
+}
+function renderStatus(){
+  const s=document.getElementById("status");
+  if(!GH){ s.innerHTML=""; return; }
+  const state = saving ? `<span class="sync">●</span> Saving…` : `<span class="ok">●</span> Synced`;
+  s.innerHTML = state;
+}
+window.go=id=>{activeTab=id;render();};
+function dueTodayCount(){
+  let n=DB.tasks.filter(t=>taskDueToday(t)||taskOverdue(t)).length;
+  n+=DB.dates.filter(d=>{const dd=daysUntil(nextOccurrence(d));return dd>=0&&dd<=(d.remindDaysBefore||0);}).length;
+  return n;
+}
+function renderToday(v){
+  const overdue=DB.tasks.filter(taskOverdue);
+  const todayTasks=DB.tasks.filter(taskDueToday);
+  const soonDates=DB.dates.map(d=>({d,days:daysUntil(nextOccurrence(d))}))
+    .filter(x=>x.days>=0&&x.days<=Math.max(x.d.remindDaysBefore||0,7)).sort((a,b)=>a.days-b.days);
+  const resToday=DB.resources.filter(resourceDueToday);
+  let html=`<div class="card"><h2>Today · ${new Date().toLocaleDateString([], {weekday:'long',month:'long',day:'numeric'})}</h2>
+    <div class="sub">Everything that needs you today.</div>`;
+  if(!overdue.length&&!todayTasks.length&&!soonDates.length&&!resToday.length)
+    html+=`<div class="empty">You're all caught up. ✦</div>`;
+  html+=`</div>`;
+  if(overdue.length)html+=`<div class="card"><h2 style="color:var(--danger)">Overdue</h2>${overdue.map(taskRow).join("")}</div>`;
+  if(todayTasks.length)html+=`<div class="card"><h2>Tasks today</h2>${todayTasks.map(taskRow).join("")}</div>`;
+  if(resToday.length)html+=`<div class="card"><h2>Check on these</h2>${resToday.map(resourceRow).join("")}</div>`;
+  if(soonDates.length)html+=`<div class="card"><h2>Coming up</h2>${soonDates.map(x=>dateRow(x.d)).join("")}</div>`;
+  v.innerHTML=html;
+}
+function resourceDueToday(r){
+  if(r.cadence==="daily")return true;
+  if(r.cadence==="weekly")return new Date().getDay()===1;
+  if(r.cadence==="monthly")return new Date().getDate()===1;
+  return false;
+}
+function renderTasks(v){
+  const open=DB.tasks.filter(t=>!t.done).sort((a,b)=>(a.due||"")<(b.due||"")?-1:1);
+  const done=DB.tasks.filter(t=>t.done);
+  v.innerHTML=`<div class="card"><h2>Tasks</h2><div class="sub">Each task can text you at several times on its due day.</div>
+    <button class="primary" onclick="taskModal()">+ New task</button></div>
+    <div class="card">${open.length?open.map(taskRow).join(""):'<div class="empty">No open tasks.</div>'}</div>
+    ${done.length?`<div class="card"><h2 class="sub">Completed</h2>${done.map(taskRow).join("")}</div>`:""}`;
+  quickAdd("Quick add a task…",t=>{DB.tasks.push({id:uid(),title:t,due:todayStr(),times:[],link:"",notes:"",recurring:null,done:false});save();render();});
+}
+function taskRow(t){
+  const displayDue=taskNextDate(t)||t.due;
+  const od=taskOverdue(t);
+  const times=(t.times||[]).map(x=>`<span class="chip time">⏰ ${x}</span>`).join("");
+  return `<div class="item ${t.done?'done':''}">
+    <div class="check ${t.done?'done':''}" onclick="toggleTask('${t.id}')"></div>
+    <div class="body"><div class="title">${esc(t.title)}</div><div class="meta">
+      ${displayDue?`<span class="chip ${od?'danger':''}">${od?'Overdue ':''}${fmtDate(displayDue)}</span>`:""}${times}
+      ${t.recurring?`<span class="chip">↻ ${t.recurring}</span>`:""}
+      ${t.link?`<a href="${esc(t.link)}" target="_blank">link ↗</a>`:""}
+      ${t.notes?`<span class="chip">${esc(t.notes)}</span>`:""}</div></div>
+    <div class="actions"><button class="sm ghost" onclick="taskModal('${t.id}')">Edit</button>
+      <button class="sm ghost danger" onclick="del('tasks','${t.id}')">✕</button></div></div>`;
+}
+window.toggleTask=id=>{const t=DB.tasks.find(x=>x.id===id);t.done=!t.done;save();render();};
+function renderDates(v){
+  const list=DB.dates.map(d=>({d,days:daysUntil(nextOccurrence(d))})).sort((a,b)=>a.days-b.days);
+  v.innerHTML=`<div class="card"><h2>Important dates</h2><div class="sub">Annual, monthly, or one-time.</div>
+    <button class="primary" onclick="dateModal()">+ New date</button></div>
+    <div class="card">${list.length?list.map(x=>dateRow(x.d)).join(""):'<div class="empty">No dates yet.</div>'}</div>`;
+}
+function dateRow(d){
+  const next=nextOccurrence(d);const days=daysUntil(next);
+  const cls=days<=0?"danger":days<=(d.remindDaysBefore||3)?"warn":"";
+  const lbl=days===0?"Today":days===1?"Tomorrow":days<0?`${-days}d ago`:`in ${days} days`;
+  return `<div class="item"><div class="body"><div class="title">${esc(d.title)}</div><div class="meta">
+    <span class="chip ${cls}">${lbl}</span><span class="chip">${fmtDate(next.toISOString().slice(0,10))}</span>
+    <span class="chip">↻ ${d.recurrence}</span>${d.remindDaysBefore?`<span class="chip">remind ${d.remindDaysBefore}d before</span>`:""}
+    ${d.notes?`<span class="chip">${esc(d.notes)}</span>`:""}</div></div>
+    <div class="actions"><button class="sm ghost" onclick="dateModal('${d.id}')">Edit</button>
+      <button class="sm ghost danger" onclick="del('dates','${d.id}')">✕</button></div></div>`;
+}
+function renderResources(v){
+  v.innerHTML=`<div class="card"><h2>Resources to check</h2><div class="sub">Links you want nudges to revisit.</div>
+    <button class="primary" onclick="resModal()">+ New resource</button></div>
+    <div class="card">${DB.resources.length?DB.resources.map(resourceRow).join(""):'<div class="empty">No resources yet.</div>'}</div>`;
+}
+function resourceRow(r){
+  return `<div class="item"><div class="body">
+    <div class="title">${r.url?`<a href="${esc(r.url)}" target="_blank">${esc(r.title)} ↗</a>`:esc(r.title)}</div>
+    <div class="meta"><span class="chip">↻ ${r.cadence}</span>${r.notes?`<span class="chip">${esc(r.notes)}</span>`:""}</div></div>
+    <div class="actions"><button class="sm ghost" onclick="resModal('${r.id}')">Edit</button>
+      <button class="sm ghost danger" onclick="del('resources','${r.id}')">✕</button></div></div>`;
+}
+function renderProjects(v){
+  const selected=selectedProjectId?DB.projects.find(p=>p.id===selectedProjectId):null;
+  if(selected){ renderProjectDetail(v, selected); return; }
+  const q=projectSearch.trim().toLowerCase();
+  const matches=p=>{
+    if(!q) return true;
+    const hay=[p.title,p.status,...(p.resources||[]).flatMap(r=>[r.title,r.url,r.notes]),...(p.notes||[]).flatMap(n=>[n.title,n.text])].join(" ").toLowerCase();
+    return hay.includes(q);
+  };
+  const open=DB.projects.filter(p=>(p.status||"active")!=="done").filter(matches);
+  const done=DB.projects.filter(p=>(p.status||"active")==="done").filter(matches);
+  v.innerHTML=`<div class="card"><h2>Projects</h2><div class="sub">Collect project notes and links to files, folders, docs, or resources.</div>
+    <div class="row"><input id="projectSearch" value="${esc(projectSearch)}" placeholder="Search projects, resources, notes…" oninput="projectSearch=this.value;renderProjects(document.getElementById('view'))">
+    <button class="primary" onclick="projectModal()">+ New project</button></div></div>
+    <div class="card">${open.length?open.map(projectRow).join(""):'<div class="empty">No active projects.</div>'}</div>
+    ${done.length?`<div class="card"><h2 class="sub">Completed</h2>${done.map(projectRow).join("")}</div>`:""}`;
+  quickAdd("Quick add a project…",t=>{DB.projects.push({id:uid(),title:t,status:"active",resources:[],notes:[]});save();render();});
+}
+function projectRow(p){
+  return `<div class="item" onclick="openProject('${p.id}')" style="cursor:pointer"><div class="body">
+    <div class="title">${esc(p.title)}</div>
+    <div class="meta"><span class="chip">${esc(p.status||"active")}</span><span class="chip">${(p.resources||[]).length} resources</span><span class="chip">${(p.notes||[]).length} notes</span></div></div>
+    <div class="actions"><button class="sm ghost" onclick="event.stopPropagation();projectModal('${p.id}')">Edit</button></div></div>`;
+}
+function renderProjectDetail(v,p){
+  const resources=(p.resources||[]).map(r=>`<div class="item"><div class="body"><div class="title">${r.url?`<a href="${esc(r.url)}" target="_blank">${esc(r.title||r.url)} ↗</a>`:esc(r.title)}</div>
+    <div class="meta">${r.notes?`<span class="chip">${esc(r.notes)}</span>`:""}</div></div>
+    <div class="actions"><button class="sm ghost" onclick="projectResourceModal('${p.id}','${r.id}')">Edit</button>
+    <button class="sm ghost danger" onclick="delProjectResource('${p.id}','${r.id}')">✕</button></div></div>`).join("");
+  const notes=(p.notes||[]).map(n=>`<div class="item"><div class="body"><div class="title">${esc(n.title||"Note")}</div>
+    <div class="meta"><span class="chip">${esc(n.text||"")}</span></div></div>
+    <div class="actions"><button class="sm ghost" onclick="projectNoteModal('${p.id}','${n.id}')">Edit</button>
+    <button class="sm ghost danger" onclick="delProjectNote('${p.id}','${n.id}')">✕</button></div></div>`).join("");
+  v.innerHTML=`<div class="card"><button class="sm ghost" onclick="closeProject()">← Projects</button>
+    <h2>${esc(p.title)}</h2><div class="sub">${esc(p.status||"active")} · ${(p.resources||[]).length} resources · ${(p.notes||[]).length} notes</div>
+    <div class="row"><button class="primary" onclick="projectResourceModal('${p.id}')">+ Resource</button><button onclick="projectNoteModal('${p.id}')">+ Note</button><button onclick="projectModal('${p.id}')">Edit project</button></div></div>
+    <div class="card"><h2>Resources</h2>${resources||'<div class="empty">No resources yet.</div>'}</div>
+    <div class="card"><h2>Notes</h2>${notes||'<div class="empty">No notes yet.</div>'}</div>`;
+}
+window.openProject=id=>{selectedProjectId=id;clearQuickAdd();render();};
+window.closeProject=()=>{selectedProjectId=null;render();};
+function renderFacts(v){
+  const cats=[...new Set(DB.facts.map(f=>f.category||"General"))];
+  let body=DB.facts.length?cats.map(c=>`<div class="card"><h2 class="sub">${esc(c)}</h2>`+
+    DB.facts.filter(f=>(f.category||"General")===c).map(factRow).join("")+`</div>`).join(""):
+    '<div class="card"><div class="empty">No facts yet.</div></div>';
+  v.innerHTML=`<div class="card"><h2>Facts</h2><div class="sub">Non-secret info. (Passwords go in the Vault.)</div>
+    <button class="primary" onclick="factModal()">+ New fact</button></div>`+body;
+  quickAdd("Quick add a fact…",t=>{DB.facts.push({id:uid(),label:t,value:"",category:"General"});save();render();});
+}
+function factRow(f){
+  return `<div class="item"><div class="body"><div class="title">${esc(f.label)}</div>
+    ${f.value?`<div class="meta"><span class="secret">${esc(f.value)}</span>
+      <button class="sm ghost" onclick="copyText('${esc(f.value)}')">copy</button></div>`:""}</div>
+    <div class="actions"><button class="sm ghost" onclick="factModal('${f.id}')">Edit</button>
+      <button class="sm ghost danger" onclick="del('facts','${f.id}')">✕</button></div></div>`;
+}
+function renderVault(v){
+  if(!masterKey){
+    v.innerHTML=`<div class="card"><div class="vault-locked"><div class="lockicon">🔒</div>
+      <h2>${DB.vaultCheck?"Vault locked":"Set up your vault"}</h2>
+      <div class="sub">${DB.vaultCheck?"Enter your master password.":"Choose a master password. It encrypts every secret with AES-256 and is never stored."}</div>
+      <div style="max-width:320px;margin:14px auto 0"><input id="mpw" type="password" placeholder="Master password" onkeydown="if(event.key==='Enter')doUnlock()">
+        <div style="height:10px"></div><button class="primary" style="width:100%" onclick="doUnlock()">${DB.vaultCheck?"Unlock":"Create vault"}</button></div></div></div>`;
+    setTimeout(()=>document.getElementById("mpw")?.focus(),50); return;
+  }
+  v.innerHTML=`<div class="card"><h2>Vault 🔓 <button class="sm ghost" style="float:right" onclick="lockVault()">Lock</button></h2>
+    <div class="sub">Passwords &amp; codes, encrypted.</div>
+    <button class="primary" onclick="vaultModal()">+ New secret</button></div><div class="card" id="vaultList"></div>`;
+  renderVaultList();
+}
+async function renderVaultList(){
+  const el=document.getElementById("vaultList");if(!el)return;
+  if(!DB.vault.length){el.innerHTML='<div class="empty">No secrets yet.</div>';return;}
+  const rows=await Promise.all(DB.vault.map(async e=>{
+    let pw="";try{pw=await decrypt(masterKey,{iv:e.iv,cipher:e.cipher});}catch(x){pw="••••";}
+    return `<div class="item"><div class="body"><div class="title">${esc(e.label)}</div><div class="meta">
+      ${e.username?`<span class="chip">${esc(e.username)}</span>`:""}
+      <span class="secret" data-pw="${esc(pw)}">••••••••</span>
+      <button class="sm ghost" onclick="reveal(this)">show</button>
+      <button class="sm ghost" onclick="copyText(this.parentElement.querySelector('.secret').dataset.pw)">copy</button>
+      ${e.url?`<a href="${esc(e.url)}" target="_blank">open ↗</a>`:""}</div></div>
+      <div class="actions"><button class="sm ghost" onclick="vaultModal('${e.id}')">Edit</button>
+        <button class="sm ghost danger" onclick="del('vault','${e.id}')">✕</button></div></div>`;}));
+  el.innerHTML=rows.join("");
+}
+window.reveal=btn=>{const s=btn.parentElement.querySelector('.secret');
+  s.textContent=s.textContent.startsWith("•")?s.dataset.pw:"••••••••";};
+window.doUnlock=async()=>{const pw=document.getElementById("mpw").value;if(!pw)return;
+  if(await unlockVault(pw))render();else toast("Wrong master password");};
+window.lockVault=()=>{masterKey=null;render();};
+function renderSettings(v){
+  const s=DB.settings;
+  const n=s.notifications||{};
+  v.innerHTML=`<div class="card"><h2>Reminder delivery</h2>
+    <div class="sub">The scheduled reminder job sends due tasks to your email and Pushover.</div>
+    <div class="grid">
+      <div><label>Email address</label><input id="set-email" type="email" value="${esc(n.email||"")}" placeholder="you@example.com"></div>
+      <div><label>Pushover email</label><input id="set-pushover" type="email" value="${esc(n.pushoverEmail||"")}" placeholder="your-code@pomail.net"></div>
+      <div><label>Daily digest time</label><input id="set-dig" type="time" value="${s.digestTime||"07:00"}"></div>
+    </div>
+    <div style="margin-top:12px"><button class="primary" onclick="saveSettings()">Save</button></div></div>
+  <div class="card"><h2>Sync</h2><div class="sub">Connected to <code>${esc(GH.owner)}/${esc(GH.repo)}</code>. Data saves here automatically and the reminder job reads it.</div>
+    <div class="row"><button onclick="exportData()">Download backup</button><button class="danger" onclick="disconnect()">Forget token on this device</button></div></div>
+  <div class="card"><h2>Add to your phone</h2><div class="sub">In Safari: tap <b>Share → Add to Home Screen</b> for an app icon.</div></div>`;
+}
+window.saveSettings=()=>{
+  DB.settings.sms=DB.settings.sms||{};
+  DB.settings.notifications=DB.settings.notifications||{};
+  DB.settings.notifications.email=document.getElementById("set-email").value;
+  DB.settings.notifications.pushoverEmail=document.getElementById("set-pushover").value;
+  DB.settings.digestTime=document.getElementById("set-dig").value;
+  save();render();toast("Saved");
+};
+
+/* ---------- Modals ---------- */
+function openModal(html){document.getElementById("modal").innerHTML=html;document.getElementById("modalBg").classList.add("show");}
+window.closeModal=()=>document.getElementById("modalBg").classList.remove("show");
+document.getElementById("modalBg").onclick=e=>{if(e.target.id==="modalBg")closeModal();};
+function timeChips(times){
+  const presets=["08:00","12:00","15:00","18:00","21:00"];
+  return `<div class="pill-row" id="timePills">`+presets.map(p=>`<span class="pill ${times.includes(p)?'on':''}" onclick="this.classList.toggle('on')" data-t="${p}">${p}</span>`).join("")+
+    `<input id="customTime" type="time" style="width:130px"><button type="button" class="sm" onclick="addCustomTime()">add</button></div>`;
+}
+window.addCustomTime=()=>{const t=document.getElementById("customTime").value;if(!t)return;
+  const row=document.getElementById("timePills");const ex=[...row.querySelectorAll('.pill')].find(p=>p.dataset.t===t);
+  if(ex){ex.classList.add('on');}else{const s=document.createElement('span');s.className='pill on';s.dataset.t=t;s.textContent=t;
+    s.onclick=function(){this.classList.toggle('on')};row.insertBefore(s,document.getElementById('customTime'));}};
+const gatherTimes=()=>[...document.querySelectorAll('#timePills .pill.on')].map(p=>p.dataset.t).sort();
+window.taskModal=id=>{
+  const t=id?DB.tasks.find(x=>x.id===id):{title:"",due:todayStr(),times:[],link:"",notes:"",recurring:null};
+  openModal(`<h3>${id?"Edit":"New"} task</h3>
+    <div class="field"><label>Task</label><input id="f-title" value="${esc(t.title)}"></div>
+    <div class="field"><label>Due date</label><input id="f-due" type="date" value="${t.due||todayStr()}"></div>
+    <div class="field"><label>Remind me at (multiple OK)</label>${timeChips(t.times||[])}</div>
+    <div class="field"><label>Repeat</label><select id="f-rec">${["","daily","weekly","monthly"].map(o=>`<option value="${o}" ${t.recurring===o||(!t.recurring&&o==="")?"selected":""}>${o||"no repeat"}</option>`).join("")}</select></div>
+    <div class="field"><label>Link</label><input id="f-link" value="${esc(t.link||"")}" placeholder="https://"></div>
+    <div class="field"><label>Notes</label><textarea id="f-notes">${esc(t.notes||"")}</textarea></div>
+    <div class="row"><button class="primary" onclick="saveTask('${id||""}')">Save</button><button class="ghost" onclick="closeModal()">Cancel</button></div>`);
+};
+window.saveTask=id=>{const obj={title:val("f-title"),due:val("f-due"),times:gatherTimes(),recurring:val("f-rec")||null,link:val("f-link"),notes:val("f-notes")};
+  if(!obj.title){toast("Add a title");return;}
+  if(id)Object.assign(DB.tasks.find(x=>x.id===id),obj);else DB.tasks.push({id:uid(),done:false,...obj});
+  save();closeModal();render();};
+window.dateModal=id=>{
+  const d=id?DB.dates.find(x=>x.id===id):{title:"",date:todayStr(),recurrence:"annual",remindDaysBefore:3,notes:""};
+  openModal(`<h3>${id?"Edit":"New"} date</h3>
+    <div class="field"><label>What is it?</label><input id="f-title" value="${esc(d.title)}" placeholder="Mom's birthday"></div>
+    <div class="field"><label>Date</label><input id="f-date" type="date" value="${d.date}"></div>
+    <div class="field"><label>Repeats</label><div class="seg" id="recSeg">${["annual","monthly","once"].map(r=>`<button type="button" class="${d.recurrence===r?'on':''}" data-r="${r}" onclick="segPick(this)">${r}</button>`).join("")}</div></div>
+    <div class="field"><label>Remind me this many days before</label><input id="f-before" type="number" min="0" max="60" value="${d.remindDaysBefore||0}"></div>
+    <div class="field"><label>Notes</label><textarea id="f-notes">${esc(d.notes||"")}</textarea></div>
+    <div class="row"><button class="primary" onclick="saveDate('${id||""}')">Save</button><button class="ghost" onclick="closeModal()">Cancel</button></div>`);
+};
+window.segPick=el=>{[...el.parentElement.children].forEach(c=>c.classList.remove('on'));el.classList.add('on');};
+window.saveDate=id=>{const obj={title:val("f-title"),date:val("f-date"),recurrence:document.querySelector("#recSeg .on").dataset.r,
+  remindDaysBefore:parseInt(val("f-before")||"0",10),notes:val("f-notes")};
+  if(!obj.title){toast("Add a title");return;}
+  if(id)Object.assign(DB.dates.find(x=>x.id===id),obj);else DB.dates.push({id:uid(),...obj});
+  save();closeModal();render();};
+window.resModal=id=>{
+  const r=id?DB.resources.find(x=>x.id===id):{title:"",url:"",cadence:"weekly",notes:""};
+  openModal(`<h3>${id?"Edit":"New"} resource</h3>
+    <div class="field"><label>Name</label><input id="f-title" value="${esc(r.title)}" placeholder="Check 401k"></div>
+    <div class="field"><label>Link</label><input id="f-url" value="${esc(r.url||"")}" placeholder="https://"></div>
+    <div class="field"><label>Check how often</label><select id="f-cad">${["daily","weekly","monthly"].map(o=>`<option ${r.cadence===o?"selected":""}>${o}</option>`).join("")}</select></div>
+    <div class="field"><label>Notes</label><textarea id="f-notes">${esc(r.notes||"")}</textarea></div>
+    <div class="row"><button class="primary" onclick="saveRes('${id||""}')">Save</button><button class="ghost" onclick="closeModal()">Cancel</button></div>`);
+};
+window.saveRes=id=>{const obj={title:val("f-title"),url:val("f-url"),cadence:val("f-cad"),notes:val("f-notes")};
+  if(!obj.title){toast("Add a name");return;}
+  if(id)Object.assign(DB.resources.find(x=>x.id===id),obj);else DB.resources.push({id:uid(),...obj});
+  save();closeModal();render();};
+window.projectModal=id=>{
+  const p=id?DB.projects.find(x=>x.id===id):{title:"",status:"active",resources:[],notes:[]};
+  openModal(`<h3>${id?"Edit":"New"} project</h3>
+    <div class="field"><label>Project name</label><input id="f-title" value="${esc(p.title)}" placeholder="Kitchen remodel"></div>
+    <div class="field"><label>Status</label><select id="f-status">${["active","waiting","done"].map(o=>`<option ${p.status===o?"selected":""}>${o}</option>`).join("")}</select></div>
+    <div class="hint">Use + Resource and + Note on the project card to add as many items as you need.</div>
+    <div class="row"><button class="primary" onclick="saveProject('${id||""}')">Save</button><button class="ghost" onclick="closeModal()">Cancel</button></div>`);
+};
+window.saveProject=id=>{
+  const obj={title:val("f-title"),status:val("f-status")||"active"};
+  if(!obj.title){toast("Add a project name");return;}
+  if(id)Object.assign(DB.projects.find(x=>x.id===id),obj);else DB.projects.push({id:uid(),resources:[],notes:[],...obj});
+  save();closeModal();render();
+};
+window.projectResourceModal=(projectId,id)=>{
+  const p=DB.projects.find(x=>x.id===projectId), r=id?(p.resources||[]).find(x=>x.id===id):{title:"",url:"",notes:""};
+  openModal(`<h3>${id?"Edit":"New"} project resource</h3>
+    <div class="field"><label>Name</label><input id="f-title" value="${esc(r.title||"")}" placeholder="Brief, folder, spreadsheet"></div>
+    <div class="field"><label>Link or file path</label><input id="f-url" value="${esc(r.url||"")}" placeholder="https:// or file:///"></div>
+    <div class="field"><label>Notes</label><textarea id="f-notes">${esc(r.notes||"")}</textarea></div>
+    <div class="row"><button class="primary" onclick="saveProjectResource('${projectId}','${id||""}')">Save</button><button class="ghost" onclick="closeModal()">Cancel</button></div>`);
+};
+window.saveProjectResource=(projectId,id)=>{
+  const p=DB.projects.find(x=>x.id===projectId); p.resources=p.resources||[];
+  const obj={title:val("f-title"),url:val("f-url"),notes:val("f-notes")};
+  if(!obj.title&&!obj.url){toast("Add a name or link");return;}
+  if(id)Object.assign(p.resources.find(x=>x.id===id),obj);else p.resources.push({id:uid(),...obj});
+  save();closeModal();render();
+};
+window.projectNoteModal=(projectId,id)=>{
+  const p=DB.projects.find(x=>x.id===projectId), n=id?(p.notes||[]).find(x=>x.id===id):{title:"",text:""};
+  openModal(`<h3>${id?"Edit":"New"} project note</h3>
+    <div class="field"><label>Title</label><input id="f-title" value="${esc(n.title||"")}" placeholder="Call notes, next steps, idea"></div>
+    <div class="field"><label>Note</label><textarea id="f-text">${esc(n.text||"")}</textarea></div>
+    <div class="row"><button class="primary" onclick="saveProjectNote('${projectId}','${id||""}')">Save</button><button class="ghost" onclick="closeModal()">Cancel</button></div>`);
+};
+window.saveProjectNote=(projectId,id)=>{
+  const p=DB.projects.find(x=>x.id===projectId); p.notes=p.notes||[];
+  const obj={title:val("f-title")||"Note",text:val("f-text"),updated:new Date().toISOString()};
+  if(!obj.text){toast("Add a note");return;}
+  if(id)Object.assign(p.notes.find(x=>x.id===id),obj);else p.notes.push({id:uid(),created:new Date().toISOString(),...obj});
+  save();closeModal();render();
+};
+window.delProjectResource=(projectId,id)=>{if(!confirm("Delete this resource?"))return;const p=DB.projects.find(x=>x.id===projectId);p.resources=(p.resources||[]).filter(x=>x.id!==id);save();render();};
+window.delProjectNote=(projectId,id)=>{if(!confirm("Delete this note?"))return;const p=DB.projects.find(x=>x.id===projectId);p.notes=(p.notes||[]).filter(x=>x.id!==id);save();render();};
+window.factModal=id=>{
+  const f=id?DB.facts.find(x=>x.id===id):{label:"",value:"",category:"General"};
+  const cats=[...new Set(["General","Home","Storage","Vehicle","Medical","Travel",...DB.facts.map(x=>x.category)])].filter(Boolean);
+  openModal(`<h3>${id?"Edit":"New"} fact</h3>
+    <div class="field"><label>Label</label><input id="f-label" value="${esc(f.label)}" placeholder="Storage locker number"></div>
+    <div class="field"><label>Value</label><input id="f-value" value="${esc(f.value||"")}" placeholder="#418, code 5567"></div>
+    <div class="field"><label>Category</label><input id="f-cat" list="cats" value="${esc(f.category||"General")}"><datalist id="cats">${cats.map(c=>`<option>${esc(c)}</option>`).join("")}</datalist></div>
+    <div class="hint">Anything secret belongs in the Vault.</div>
+    <div class="row" style="margin-top:12px"><button class="primary" onclick="saveFact('${id||""}')">Save</button><button class="ghost" onclick="closeModal()">Cancel</button></div>`);
+};
+window.saveFact=id=>{const obj={label:val("f-label"),value:val("f-value"),category:val("f-cat")||"General"};
+  if(!obj.label){toast("Add a label");return;}
+  if(id)Object.assign(DB.facts.find(x=>x.id===id),obj);else DB.facts.push({id:uid(),...obj});
+  save();closeModal();render();};
+window.vaultModal=id=>{
+  const e=id?DB.vault.find(x=>x.id===id):null;
+  openModal(`<h3>${id?"Edit":"New"} secret</h3>
+    <div class="field"><label>Label</label><input id="f-label" value="${e?esc(e.label):""}" placeholder="Storage gate code"></div>
+    <div class="field"><label>Username</label><input id="f-user" value="${e?esc(e.username||""):""}"></div>
+    <div class="field"><label>Password / secret</label><input id="f-secret" type="text" placeholder="${id?'leave blank to keep current':''}"></div>
+    <div class="field"><label>URL</label><input id="f-url" value="${e?esc(e.url||""):""}" placeholder="https://"></div>
+    <div class="row"><button class="primary" onclick="saveVault('${id||""}')">Save</button><button class="ghost" onclick="closeModal()">Cancel</button></div>`);
+};
+window.saveVault=async id=>{
+  const label=val("f-label"),user=val("f-user"),secret=val("f-secret"),url=val("f-url");
+  if(!label){toast("Add a label");return;}
+  if(id){const e=DB.vault.find(x=>x.id===id);e.label=label;e.username=user;e.url=url;
+    if(secret){const c=await encrypt(masterKey,secret);e.iv=c.iv;e.cipher=c.cipher;}}
+  else{if(!secret){toast("Add the secret");return;}const c=await encrypt(masterKey,secret);
+    DB.vault.push({id:uid(),label,username:user,url,iv:c.iv,cipher:c.cipher});}
+  save();closeModal();render();};
+
+/* ---------- Helpers ---------- */
+window.del=(coll,id)=>{if(!confirm("Delete this?"))return;DB[coll]=DB[coll].filter(x=>x.id!==id);save();render();};
+function quickAdd(placeholder,fn){
+  const d=document.createElement("div");d.className="quickadd";
+  d.innerHTML=`<div class="inner"><input id="qa" placeholder="${placeholder}"><button class="primary" id="qab">Add</button></div>`;
+  document.body.appendChild(d);
+  const go=()=>{const t=document.getElementById("qa").value.trim();if(!t)return;fn(t);};
+  d.querySelector("#qab").onclick=go;d.querySelector("#qa").onkeydown=e=>{if(e.key==="Enter")go();};
+}
+function clearQuickAdd(){document.querySelectorAll(".quickadd").forEach(e=>e.remove());}
+const _render=render; render=function(){clearQuickAdd();_render();};
+const val=id=>document.getElementById(id).value.trim();
+const esc=s=>(s==null?"":String(s)).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function fmtDate(s){if(!s)return"";return new Date(s+"T00:00:00").toLocaleDateString([], {month:'short',day:'numeric'});}
+window.copyText=t=>{navigator.clipboard.writeText(t).then(()=>toast("Copied"));};
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),2200);}
+function exportData(){const b=new Blob([JSON.stringify(DB,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="anchor-backup-"+todayStr()+".json";a.click();}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&GH&&!saving)pull(false);});
+boot();
+</script>
+</body>
+</html>
