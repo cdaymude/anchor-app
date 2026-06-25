@@ -367,6 +367,7 @@ function renderToday(v){
   v.innerHTML=html;
 }
 function resourceDueToday(r){
+  if((r.cadence||"weekly")==="none")return false;
   if(r.cadence==="daily")return true;
   if(r.cadence==="weekly")return new Date().getDay()===1;
   if(r.cadence==="monthly")return new Date().getDate()===1;
@@ -469,9 +470,11 @@ function renderResources(v){
     <div class="card">${DB.resources.length?DB.resources.map(resourceRow).join(""):'<div class="empty">No resources yet.</div>'}</div>`;
 }
 function resourceRow(r){
+  const cadence=r.cadence||"weekly";
+  const cadenceLabel=cadence==="none"?"no reminder":`↻ ${cadence}`;
   return `<div class="item"><div class="body">
     <div class="title">${r.url?`<a href="${esc(r.url)}" target="_blank">${esc(r.title)} ↗</a>`:esc(r.title)}</div>
-    <div class="meta"><span class="chip">↻ ${r.cadence}</span>${r.notes?`<span class="chip">${esc(r.notes)}</span>`:""}</div></div>
+    <div class="meta"><span class="chip">${esc(cadenceLabel)}</span>${r.notes?`<span class="chip">${esc(r.notes)}</span>`:""}</div></div>
     <div class="actions"><button class="sm ghost" onclick="resModal('${r.id}')">Edit</button>
       <button class="sm ghost danger" onclick="del('resources','${r.id}')">✕</button></div></div>`;
 }
@@ -637,10 +640,11 @@ window.saveDate=id=>{const obj={title:val("f-title"),date:val("f-date"),recurren
   save();closeModal();render();};
 window.resModal=id=>{
   const r=id?DB.resources.find(x=>x.id===id):{title:"",url:"",cadence:"weekly",notes:""};
+  const cad=r.cadence||"weekly";
   openModal(`<h3>${id?"Edit":"New"} resource</h3>
     <div class="field"><label>Name</label><input id="f-title" value="${esc(r.title)}" placeholder="Check 401k"></div>
     <div class="field"><label>Link</label><input id="f-url" value="${esc(r.url||"")}" placeholder="https://"></div>
-    <div class="field"><label>Check how often</label><select id="f-cad">${["daily","weekly","monthly"].map(o=>`<option ${r.cadence===o?"selected":""}>${o}</option>`).join("")}</select></div>
+    <div class="field"><label>Check how often</label><select id="f-cad">${["none","daily","weekly","monthly"].map(o=>`<option ${cad===o?"selected":""}>${o}</option>`).join("")}</select></div>
     <div class="field"><label>Notes</label><textarea id="f-notes">${esc(r.notes||"")}</textarea></div>
     <div class="row"><button class="primary" onclick="saveRes('${id||""}')">Save</button><button class="ghost" onclick="closeModal()">Cancel</button></div>`);
 };
